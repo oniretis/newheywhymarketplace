@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import AdminStaffTemplate from "@/components/templates/admin/admin-staff-template";
 import type { Staff } from "@/types/staff";
 
@@ -12,11 +12,7 @@ function AdminStaffPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadStaff();
-  }, [loadStaff]);
-
-  const loadStaff = async () => {
+  const loadStaff = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/staff");
@@ -28,11 +24,15 @@ function AdminStaffPage() {
         setError(result.error || "Failed to load staff");
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      setError(err instanceof Error ? err.message : "Failed to load staff");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadStaff();
+  }, [loadStaff]);
 
   const handleAddStaff = async (data: Omit<Staff, "id" | "joinedDate">) => {
     try {

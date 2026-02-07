@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   getUsers,
-  getUserById,
   deleteUser,
   createUser,
 } from "@/lib/functions/admin/users";

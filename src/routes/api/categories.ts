@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema/category-schema";
-import { eq, and, isNotNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export const Route = createFileRoute("/api/categories")({
   server: {

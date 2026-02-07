@@ -5,7 +5,7 @@ import {
 import { createTagSchema } from "@/lib/validators/shared/tag-query";
 import { getAdminShops } from "@/lib/functions/admin/shops";
 import type { TagFormValues } from "@/types/tags";
-import { useEffect, useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface AdminAddTagDialogProps {
   open: boolean;
@@ -28,7 +28,7 @@ export function AdminAddTagDialog({
   const [shopsLoading, setShopsLoading] = useState(false);
 
   // Fetch shops for admin to select from
-  const fetchShops = async () => {
+  const fetchShops = useCallback(async () => {
     try {
       setShopsLoading(true);
       const response = await getAdminShops({
@@ -48,7 +48,7 @@ export function AdminAddTagDialog({
     } finally {
       setShopsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (open) {

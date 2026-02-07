@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import AdminTagsTemplate from "@/components/templates/admin/admin-tags-template";
 import {
   getAdminTags,
@@ -15,10 +15,10 @@ export const Route = createFileRoute("/(admin)/admin/tags/")({
 function AdminTagsPage() {
   const [tags, setTags] = useState<TagItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
 
   // Fetch tags from database
-  const fetchTags = async () => {
+  const fetchTags = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -33,7 +33,7 @@ function AdminTagsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTags();

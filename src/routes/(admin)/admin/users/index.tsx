@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import AdminUsersTemplate from "@/components/templates/admin/admin-users-template";
 import type { User } from "@/types/users";
 
@@ -12,11 +12,7 @@ function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch("/api/users");
@@ -30,7 +26,11 @@ function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleAddUser = async (data: UserFormValues) => {
     try {

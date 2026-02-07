@@ -90,7 +90,7 @@ async function seedProducts() {
 
     // Get or create brands
     const existingBrands = await db.query.brands.findMany();
-    let brandIds = existingBrands.map((b) => b.id);
+    const brandIds = existingBrands.map((b) => b.id);
 
     if (brandIds.length < BRAND_NAMES.length) {
       for (const brandName of BRAND_NAMES) {
