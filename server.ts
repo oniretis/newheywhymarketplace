@@ -68,7 +68,7 @@ import path from "node:path";
 // Configuration
 const SERVER_PORT = Number(process.env.PORT ?? 3000);
 const CLIENT_DIRECTORY = "./dist/client";
-const SERVER_ENTRY_POINT = "./dist/server/server.js";
+const SERVER_ENTRY_POINT = path.resolve("./dist/server/server.js");
 
 // Logging utilities for professional output
 const log = {
@@ -507,13 +507,22 @@ async function initializeServer() {
   // Load TanStack Start server handler
   let handler: { fetch: (request: Request) => Response | Promise<Response> };
   try {
-    const serverModule = (await import(SERVER_ENTRY_POINT)) as {
-      default: { fetch: (request: Request) => Response | Promise<Response> };
-    };
-    handler = serverModule.default;
+    const serverModule = await import(SERVER_ENTRY_POINT);
+    console.log('Server module exports:', Object.keys(serverModule));
+    
+    // Try different export patterns
+    if (serverModule.default && typeof serverModule.default.fetch === 'function') {
+      handler = serverModule.default;
+    } else if (typeof serverModule.fetch === 'function') {
+      handler = serverModule as any;
+    } else {
+      throw new Error('No fetch handler found in server module');
+    }
+    
     log.success("TanStack Start application handler initialized");
   } catch (error) {
     log.error(`Failed to load server handler: ${String(error)}`);
+    log.error(`Attempted to load: ${SERVER_ENTRY_POINT}`);
     process.exit(1);
   }
 
