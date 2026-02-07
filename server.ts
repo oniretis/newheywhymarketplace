@@ -67,8 +67,8 @@ import path from "node:path";
 
 // Configuration
 const SERVER_PORT = Number(process.env.PORT ?? 3000);
-const CLIENT_DIRECTORY = "./dist/client";
-const SERVER_ENTRY_POINT = path.resolve("./dist/server/server.js");
+const CLIENT_DIRECTORY = path.resolve(process.cwd(), "./dist/client");
+const SERVER_ENTRY_POINT = path.resolve(process.cwd(), "./dist/server/server.js");
 
 // Logging utilities for professional output
 const log = {
@@ -507,7 +507,16 @@ async function initializeServer() {
   // Load TanStack Start server handler
   let handler: { fetch: (request: Request) => Response | Promise<Response> };
   try {
-    const serverModule = await import(SERVER_ENTRY_POINT);
+    // Try dynamic import first (ES modules)
+    let serverModule;
+    try {
+      serverModule = await import(SERVER_ENTRY_POINT);
+    } catch (importError) {
+      // Fallback to require for CommonJS modules
+      log.warning(`ES import failed, trying CommonJS require: ${String(importError)}`);
+      serverModule = require(SERVER_ENTRY_POINT);
+    }
+    
     console.log('Server module exports:', Object.keys(serverModule));
     
     // Try different export patterns
