@@ -1,9 +1,3 @@
 {
-  "buildCommand": "bun run build",
-  "outputDirectory": ".output/public",
-  "functions": {
-    "api/**": {
-      "runtime": "edge"
-    }
-  }
+  "buildCommand": "bun run build"
 }
