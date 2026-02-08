@@ -4,9 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000",
-    "start": "bun run server.ts",
-    "build": "vite build",
-    "preview": "vite preview",
+    "start": "node .output/server/index.mjs",
+    "build": "nitro build",
+    "preview": "nitro preview",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
