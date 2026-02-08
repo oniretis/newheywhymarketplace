@@ -14,6 +14,7 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+  base: process.env.VITE_BASE_PATH || "/newheywhymarketplace",
 });
 
 export default config;
