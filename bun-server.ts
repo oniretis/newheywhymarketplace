@@ -63,12 +63,20 @@
  *   bun run server.ts
  */
 
+import fs from "node:fs";
 import path from "node:path";
 
 // Configuration
 const SERVER_PORT = Number(process.env.PORT ?? 3000);
-const CLIENT_DIRECTORY = "./dist/client";
-const SERVER_ENTRY_POINT = "./dist/server/server.js";
+
+// Handle different deployment scenarios
+// Check if dist exists in current directory, if not, look in parent directory
+const distExistsInCurrent = fs.existsSync(path.join(process.cwd(), 'dist'));
+const isRunningFromSubdirectory = !distExistsInCurrent && fs.existsSync(path.join(process.cwd(), '..', 'dist'));
+const basePath = isRunningFromSubdirectory ? path.resolve(process.cwd(), '..') : process.cwd();
+
+const CLIENT_DIRECTORY = path.resolve(basePath, "./dist/client");
+const SERVER_ENTRY_POINT = path.resolve(basePath, "./dist/server/server.js");
 
 // Logging utilities for professional output
 const log = {
@@ -88,6 +96,14 @@ const log = {
     console.log(`\n${message}\n`);
   },
 };
+
+// Debug logging for deployment troubleshooting
+log.info(`Current working directory: ${process.cwd()}`);
+log.info(`Dist exists in current directory: ${distExistsInCurrent}`);
+log.info(`Running from subdirectory: ${isRunningFromSubdirectory}`);
+log.info(`Base path: ${basePath}`);
+log.info(`Server entry point: ${SERVER_ENTRY_POINT}`);
+log.info(`Client directory: ${CLIENT_DIRECTORY}`);
 
 // Preloading configuration from environment variables
 const MAX_PRELOAD_BYTES = Number(
@@ -507,13 +523,31 @@ async function initializeServer() {
   // Load TanStack Start server handler
   let handler: { fetch: (request: Request) => Response | Promise<Response> };
   try {
-    const serverModule = (await import(SERVER_ENTRY_POINT)) as {
-      default: { fetch: (request: Request) => Response | Promise<Response> };
-    };
-    handler = serverModule.default;
+    // Try dynamic import first (ES modules)
+    let serverModule;
+    try {
+      serverModule = await import(SERVER_ENTRY_POINT);
+    } catch (importError) {
+      // Fallback to require for CommonJS modules
+      log.warning(`ES import failed, trying CommonJS require: ${String(importError)}`);
+      serverModule = require(SERVER_ENTRY_POINT);
+    }
+    
+    console.log('Server module exports:', Object.keys(serverModule));
+    
+    // Try different export patterns
+    if (serverModule.default && typeof serverModule.default.fetch === 'function') {
+      handler = serverModule.default;
+    } else if (typeof serverModule.fetch === 'function') {
+      handler = serverModule as any;
+    } else {
+      throw new Error('No fetch handler found in server module');
+    }
+    
     log.success("TanStack Start application handler initialized");
   } catch (error) {
     log.error(`Failed to load server handler: ${String(error)}`);
+    log.error(`Attempted to load: ${SERVER_ENTRY_POINT}`);
     process.exit(1);
   }
 
