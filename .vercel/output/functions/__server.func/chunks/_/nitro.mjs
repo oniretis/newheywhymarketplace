@@ -570,6 +570,51 @@ function isUnhandledResponse(val) {
 	return val === void 0 || val === kNotFound;
 }
 
+function defineHandler(input) {
+	if (typeof input === "function") return handlerWithFetch(input);
+	const handler = input.handler || (input.fetch ? function _fetchHandler(event) {
+		return input.fetch(event.req);
+	} : NoHandler);
+	return Object.assign(handlerWithFetch(input.middleware?.length ? function _handlerMiddleware(event) {
+		return callMiddleware(event, input.middleware, handler);
+	} : handler), input);
+}
+function handlerWithFetch(handler) {
+	if ("fetch" in handler) return handler;
+	return Object.assign(handler, { fetch: (req) => {
+		if (typeof req === "string") req = new URL(req, "http://_");
+		if (req instanceof URL) req = new Request(req);
+		const event = new H3Event(req);
+		try {
+			return Promise.resolve(toResponse(handler(event), event));
+		} catch (error) {
+			return Promise.resolve(toResponse(error, event));
+		}
+	} });
+}
+function defineLazyEventHandler(loader) {
+	let handler;
+	let promise;
+	const resolveLazyHandler = () => {
+		if (handler) return Promise.resolve(handler);
+		return promise ??= Promise.resolve(loader()).then((r) => {
+			handler = toEventHandler(r) || toEventHandler(r.default);
+			if (typeof handler !== "function") throw new TypeError("Invalid lazy handler", { cause: { resolved: r } });
+			return handler;
+		});
+	};
+	return defineHandler(function lazyHandler(event) {
+		return handler ? handler(event) : resolveLazyHandler().then((r) => r(event));
+	});
+}
+function toEventHandler(handler) {
+	if (typeof handler === "function") return handler;
+	if (typeof handler?.handler === "function") return handler.handler;
+	if (typeof handler?.fetch === "function") return function _fetchHandler(event) {
+		return handler.fetch(event.req);
+	};
+}
+
 const NoHandler = () => kNotFound;
 var H3Core = class {
 	config;
@@ -688,6 +733,10 @@ async function errorHandler(error, event) {
   // H3 will handle fallback
 }
 
+const _lazy_77zQ0z = defineLazyEventHandler(() => Promise.resolve().then(function () { return rendererTemplate; }));
+
+const findRoute = /* @__PURE__ */ (() => {const data={route:"/**",handler:_lazy_77zQ0z};return ((_m, p)=>{return {data,params:{"_":p.slice(1)}};})})();
+
 function useNitroApp() {
 	return useNitroApp.__instance__ ??= initNitroApp();
 }
@@ -728,7 +777,20 @@ function createNitroApp() {
 function createH3App(config) {
 	// Create H3 app
 	const h3App = new H3Core(config);
+	// Compiled route matching
+	(h3App["~findRoute"] = (event) => findRoute(event.req.method, event.url.pathname));
 	return h3App;
 }
+
+const rendererTemplate$1 = () => new HTTPResponse("", { headers: { "content-type": "text/html; charset=utf-8" } });
+
+function renderIndexHTML(event) {
+	return rendererTemplate$1(event.req);
+}
+
+const rendererTemplate = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	default: renderIndexHTML
+});
 
 export { useNitroApp as u };

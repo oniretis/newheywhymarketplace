@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000",
-    "start": "node .output/server/index.mjs",
+    "start": "node dist/server/server.js",
     "build": "vite build && nitro build --preset vercel",
     "preview": "nitro preview",
     "db:generate": "drizzle-kit generate",
